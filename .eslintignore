@@ -1,0 +1,6 @@
+dist
+# Since templates below has there own eslintrc
+templates/nextjs
+templates/nextjs-ts
+templates/nuxtjs
+templates/nuxtjs-ts

@@ -1,0 +1,57 @@
+{
+  "name": "@line/create-liff-app",
+  "version": "0.0.1",
+  "description": "Start developing LIFF application with a simple CLI command.",
+  "main": "./dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/line/create-liff-app"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "start": "yarn build && node dist/index.js",
+    "test": "yarn build && jest",
+    "lint:eslint": "eslint '**/*.{ts,js}'",
+    "fix:eslint": "yarn lint:eslint --fix",
+    "update:liff-versions": "node scripts/updateLiffVersions.js"
+  },
+  "keywords": [
+    "LINE",
+    "LIFF"
+  ],
+  "license": "SEE LICENSE IN README.md",
+  "engines": {
+    "node": ">=14"
+  },
+  "bin": {
+    "create-liff-app": "./dist/index.js",
+    "cla": "./dist/index.js"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "cross-spawn": "^7.0.3",
+    "inquirer": "^8.1.5",
+    "validate-npm-package-name": "^3.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.17.2",
+    "@babel/preset-env": "^7.16.11",
+    "@babel/preset-typescript": "^7.16.7",
+    "@types/cross-spawn": "^6.0.2",
+    "@types/inquirer": "^8.1.3",
+    "@types/jest": "^27.4.0",
+    "@types/validate-npm-package-name": "^3.0.3",
+    "@typescript-eslint/eslint-plugin": "^5.12.0",
+    "@typescript-eslint/parser": "^5.12.0",
+    "babel-jest": "^27.5.1",
+    "eslint": "^8.9.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-jest": "^26.1.1",
+    "execa": "^5.1.1",
+    "jest": "^27.5.1",
+    "prettier": "^2.5.1",
+    "ts-jest": "^27.1.3",
+    "typescript": "^4.4.3"
+  }
+}

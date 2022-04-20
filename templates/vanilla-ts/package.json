@@ -1,0 +1,16 @@
+{
+  "name": "vanilla-ts",
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@line/liff": "2.18.2"
+  },
+  "devDependencies": {
+    "typescript": "^4.4.4",
+    "vite": "^2.7.2"
+  }
+}
