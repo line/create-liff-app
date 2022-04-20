@@ -7,7 +7,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@line/liff": "2.18.2",
+    "@line/liff": "2.19.1",
     "vue": "^3.2.25"
   },
   "devDependencies": {
