@@ -206,7 +206,7 @@ const questions: Array<Question | ListQuestion> = [
   {
     type: 'list',
     name: 'template',
-    message: 'Which template you want to use?',
+    message: 'Which template do you want to use?',
     choices: [
       {
         value: 'vanilla',
