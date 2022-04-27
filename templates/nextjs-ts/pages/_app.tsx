@@ -15,7 +15,7 @@ function MyApp({ Component, pageProps }: AppProps) {
       .then((liff) => {
         console.log("LIFF init...");
         liff
-          .init({ liffId: process.env.LIFF_ID! })
+          .init({ liffId: process.env.NEXT_PUBLIC_LIFF_ID! })
           .then(() => {
             console.log("LIFF init succeeded.");
             setLiffObject(liff);
