@@ -35,6 +35,10 @@ const envPrefix: Record<string, string> = {
   nuxtjs: '',
   'nuxtjs-ts': ''
 };
+const envFileNameVariant: Record<string, string> = {
+  nextjs: '.env.local',
+  'nextjs-ts': '.env.local',
+};
 const rename: Record<string, string> = {
   '.gitignore.default': '.gitignore'
 };
@@ -93,7 +97,8 @@ export async function createLiffApp(answers: Answers) {
 
     // create .env file
     const content = `${envPrefix[templateName]}LIFF_ID=${liffId}`;
-    fs.writeFileSync(path.join(root, '.env'), content);
+    const envFileName = envFileNameVariant[templateName] || '.env';
+    fs.writeFileSync(path.join(root, envFileName), content);
 
     // install
     const isYarn = packageManager === 'yarn';
