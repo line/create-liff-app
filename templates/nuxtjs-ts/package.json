@@ -12,7 +12,7 @@
     "lintfix": "yarn lint:js --fix"
   },
   "dependencies": {
-    "@line/liff": "2.19.1",
+    "@line/liff": "2.20.0",
     "@nuxtjs/axios": "^5.13.6",
     "core-js": "^3.19.3",
     "nuxt": "^2.15.8",
