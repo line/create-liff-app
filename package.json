@@ -1,6 +1,6 @@
 {
   "name": "@line/create-liff-app",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Start developing LIFF application with a simple CLI command.",
   "main": "./dist/index.js",
   "repository": {
