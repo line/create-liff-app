@@ -21,24 +21,6 @@ import chalk from 'chalk';
 import validate from 'validate-npm-package-name';
 import inquirer, { ListQuestion, Question } from 'inquirer';
 
-const envPrefix: Record<string, string> = {
-  vanilla: 'VITE_',
-  'vanilla-ts': 'VITE_',
-  react: 'VITE_',
-  'react-ts': 'VITE_',
-  vue: 'VITE_',
-  'vue-ts': 'VITE_',
-  svelte: 'VITE_',
-  'svelte-ts': 'VITE_',
-  nextjs: 'NEXT_PUBLIC_',
-  'nextjs-ts': 'NEXT_PUBLIC_',
-  nuxtjs: '',
-  'nuxtjs-ts': ''
-};
-const envFileNameVariant: Record<string, string> = {
-  nextjs: '.env.local',
-  'nextjs-ts': '.env.local',
-};
 const rename: Record<string, string> = {
   '.gitignore.default': '.gitignore'
 };
@@ -54,33 +36,38 @@ type PackageManager = 'npm' | 'yarn'
 
 export async function createLiffApp(answers: Answers) {
   const { projectName, template, language, installNow, liffId } = answers;
-  const packageManager: PackageManager = installNow ? await inquirer.prompt({
-    type: 'list',
-    name: 'packageManager',
-    message: 'Which package manager do you want to use?',
-    choices: [
-      {
-        key: 'yarn',
-        value: 'yarn',
-        checked: true,
-      },
-      {
-        key: 'npm',
-        value: 'npm',
-        checked: false,
-      },
-    ],
-  }).then(({ packageManager }) => packageManager as PackageManager) : 'npm';
-  
-  const templateName = `${template}${language === 'JavaScript' ? '' : '-ts'}`;
+  const templateConfig = templates[template];
+  const isTypescript = language === 'TypeScript';
   const cwd = process.cwd();
   const root = path.join(cwd, projectName);
+  const packageManager: PackageManager = installNow
+    ? await inquirer
+      .prompt({
+        type: 'list',
+        name: 'packageManager',
+        message: 'Which package manager do you want to use?',
+        choices: [
+          {
+            key: 'yarn',
+            value: 'yarn',
+            checked: true,
+          },
+          {
+            key: 'npm',
+            value: 'npm',
+            checked: false,
+          },
+        ],
+      })
+      .then(({ packageManager }) => packageManager as PackageManager)
+    : 'npm';
 
   try {
     // create directory
     fs.mkdirSync(root, { recursive: true });
 
     // copy files
+    const templateName = `${template}${isTypescript ? '-ts' : ''}`;
     const templateDir = path.join(__dirname, '../templates', templateName);
     const files = fs.readdirSync(templateDir);
     for(const file of files.filter(f => f !== 'package.json')) {
@@ -96,14 +83,25 @@ export async function createLiffApp(answers: Answers) {
     fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify(pkg, null, 2));
 
     // create .env file
-    const content = `${envPrefix[templateName]}LIFF_ID=${liffId}`;
-    const envFileName = envFileNameVariant[templateName] || '.env';
+    const content = `${templateConfig.envPrefix}LIFF_ID=${liffId}`;
+    const envFileName = templateConfig?.envFileNameVariant || '.env';
     fs.writeFileSync(path.join(root, envFileName), content);
 
     // install
     const isYarn = packageManager === 'yarn';
     if (installNow) {
-      await install(root, isYarn);
+      const { dependencies, devDependencies, tsDevDependencies } = templateConfig;
+      if (isTypescript) devDependencies.push(...tsDevDependencies);
+
+      console.log('\nInstalling dependencies:');
+      dependencies.forEach((dependency) => console.log(`- ${chalk.blue(dependency)}`));
+      console.log();
+      await install({ root, isYarn, dependencies, isDev: false });
+
+      console.log('\nInstalling devDependencies:');
+      devDependencies.forEach((dependency) => console.log(`- ${chalk.blue(dependency)}`));
+      console.log();
+      await install({ root, isYarn, dependencies: devDependencies, isDev: true });
     }
 
     // Done
@@ -148,11 +146,29 @@ function toValidPackageName(name: string): string {
     .replace(/[^a-z0-9-~]+/g, '-');
 }
 
-function install(root: string, isYarn: boolean) {
+function install({
+  root,
+  dependencies,
+  isYarn,
+  isDev,
+}: {
+  root: string;
+  dependencies: string[];
+  isYarn: boolean;
+  isDev: boolean;
+}) {
   return new Promise<void>((resolve, reject) => {
     try {
       const command = isYarn ? 'yarnpkg' : 'npm';
-      const args = ['install', isYarn ? '--cwd' : '--prefix', root];
+      const args: string[] = [];
+      if (isYarn) {
+        args.push('add', '--exact', '--cwd', root);
+        if (isDev) args.push('--dev');
+      } else {
+        args.push('install', '--save-exact', isDev ? '--save-dev' : '--save');
+      }
+      args.push(...dependencies);
+
       const child = spawn(command, args, {
         stdio: 'inherit',
         env: { ...process.env, ADBLOCK: '1', DISABLE_OPENCOLLECTIVE: '1' }
@@ -204,7 +220,7 @@ const questions: Array<Question | ListQuestion> = [
         console.log(`\n${chalk.yellow('The project is already exists.')}`);
         return false;
       }
-      
+
       return true;
     },
   },
@@ -275,3 +291,57 @@ const questions: Array<Question | ListQuestion> = [
     message: 'Do you want to install it now with package manager?'
   }
 ];
+
+type TemplateOptions = {
+  envPrefix: string;
+  envFileNameVariant?: string;
+  dependencies: string[];
+  devDependencies: string[];
+  tsDevDependencies: string[];
+};
+const templates: Record<string, TemplateOptions> = {
+  vanilla: {
+    envPrefix: 'VITE_',
+    dependencies: ['@line/liff'],
+    devDependencies: ['vite'],
+    tsDevDependencies: ['typescript'],
+  },
+  react: {
+    envPrefix: 'VITE_',
+    dependencies: ['@line/liff', 'react', 'react-dom'],
+    devDependencies: ['@vitejs/plugin-react', 'vite'],
+    tsDevDependencies: ['@types/react', '@types/react-dom', 'typescript'],
+  },
+  vue: {
+    envPrefix: 'VITE_',
+    dependencies: ['@line/liff', 'vue'],
+    devDependencies: ['@vitejs/plugin-vue', 'vite'],
+    tsDevDependencies: ['typescript', 'vue-tsc'],
+  },
+  svelte: {
+    envPrefix: 'VITE_',
+    dependencies: ['@line/liff'],
+    devDependencies: ['@sveltejs/vite-plugin-svelte', 'svelte', 'vite'],
+    tsDevDependencies: ['@tsconfig/svelte', 'svelte-check', 'svelte-preprocess', 'tslib', 'typescript'],
+  },
+  nextjs: {
+    envPrefix: 'NEXT_PUBLIC_',
+    envFileNameVariant: '.env.local',
+    dependencies: ['@line/liff', 'next', 'react', 'react-dom'],
+    devDependencies: ['eslint', 'eslint-config-next'],
+    tsDevDependencies: ['@types/node', '@types/react', '@types/react-dom', 'typescript'],
+  },
+  nuxtjs: {
+    envPrefix: '',
+    dependencies: ['@line/liff', 'core-js', 'nuxt', 'vue', 'vue-server-renderer', 'vue-template-compiler', 'webpack'],
+    devDependencies: [
+      '@babel/eslint-parser',
+      '@nuxtjs/eslint-config',
+      '@nuxtjs/eslint-module',
+      'eslint',
+      'eslint-plugin-nuxt',
+      'eslint-plugin-vue',
+    ],
+    tsDevDependencies: ['@nuxt/types', '@nuxt/typescript-build', '@nuxtjs/eslint-config-typescript'],
+  },
+};
