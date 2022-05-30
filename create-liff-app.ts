@@ -340,7 +340,16 @@ const templates: Record<string, TemplateOptions> = {
   },
   nuxtjs: {
     envPrefix: '',
-    dependencies: ['@line/liff', 'core-js', 'nuxt', 'vue@2', 'vue-server-renderer', 'vue-template-compiler', 'webpack'],
+    dependencies: [
+      '@line/liff',
+      '@nuxtjs/axios',
+      'core-js',
+      'nuxt',
+      'vue@2',
+      'vue-server-renderer@2',
+      'vue-template-compiler@2',
+      'webpack'
+    ],
     devDependencies: [
       '@babel/eslint-parser',
       '@nuxtjs/eslint-config',
