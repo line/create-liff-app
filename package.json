@@ -13,8 +13,7 @@
     "start": "yarn build && node dist/index.js",
     "test": "yarn build && jest",
     "lint:eslint": "eslint '**/*.{ts,js}'",
-    "fix:eslint": "yarn lint:eslint --fix",
-    "update:liff-versions": "node scripts/updateLiffVersions.js"
+    "fix:eslint": "yarn lint:eslint --fix"
   },
   "keywords": [
     "LINE",
