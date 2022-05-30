@@ -29,7 +29,7 @@ export function init() {
   console.log(
     `${chalk.greenBright('Welcome')} to the ${chalk.cyan('Create LIFF App')}`
   );
-  prompt(questions).then(async (answers) => await createLiffApp(answers));  
+  prompt(questions).then(async (answers) => await createLiffApp(answers));
 }
 
 type PackageManager = 'npm' | 'yarn'
@@ -89,20 +89,18 @@ export async function createLiffApp(answers: Answers) {
 
     // install
     const isYarn = packageManager === 'yarn';
-    if (installNow) {
-      const { dependencies, devDependencies, tsDevDependencies } = templateConfig;
-      if (isTypescript) devDependencies.push(...tsDevDependencies);
+    const { dependencies, devDependencies, tsDevDependencies } = templateConfig;
+    if (isTypescript) devDependencies.push(...tsDevDependencies);
 
-      console.log('\nInstalling dependencies:');
-      dependencies.forEach((dependency) => console.log(`- ${chalk.blue(dependency)}`));
-      console.log();
-      await install({ root, isYarn, dependencies, isDev: false });
+    console.log(`\n${installNow ? 'Installing' : 'Updating'} dependencies:`);
+    dependencies.forEach((dependency) => console.log(`- ${chalk.blue(dependency)}`));
+    console.log();
+    await install({ root, isYarn, dependencies, isDev: false, installNow });
 
-      console.log('\nInstalling devDependencies:');
-      devDependencies.forEach((dependency) => console.log(`- ${chalk.blue(dependency)}`));
-      console.log();
-      await install({ root, isYarn, dependencies: devDependencies, isDev: true });
-    }
+    console.log(`\n${installNow ? 'Installing' : 'Updating'} devDependencies:`);
+    devDependencies.forEach((dependency) => console.log(`- ${chalk.blue(dependency)}`));
+    console.log();
+    await install({ root, isYarn, dependencies: devDependencies, isDev: true, installNow });
 
     // Done
     showDoneComments({ projectName, installNow, isYarn });
@@ -151,22 +149,27 @@ function install({
   dependencies,
   isYarn,
   isDev,
+  installNow
 }: {
   root: string;
   dependencies: string[];
   isYarn: boolean;
   isDev: boolean;
+  installNow: boolean;
 }) {
   return new Promise<void>((resolve, reject) => {
     try {
+      // `isYarn` is false when `installNow` is false
       const command = isYarn ? 'yarnpkg' : 'npm';
       const args: string[] = [];
       if (isYarn) {
         args.push('add', '--exact', '--cwd', root);
         if (isDev) args.push('--dev');
       } else {
-        args.push('install', '--save-exact', isDev ? '--save-dev' : '--save');
+        args.push('install', '--save-exact', '--prefix', root);
+        if (isDev) args.push('--save-dev');
       }
+      if (!installNow) args.push('--no-package-lock', '--package-lock-only');
       args.push(...dependencies);
 
       const child = spawn(command, args, {
@@ -178,6 +181,10 @@ function install({
           reject({ command: `${command} ${args.join(' ')}` });
           return;
         }
+
+        // deletes package-lock.json if it gets created, for some reason
+        if (!installNow) fs.rmSync(path.join(root, 'package-lock.json'));
+
         resolve();
       });
     } catch(error) {
