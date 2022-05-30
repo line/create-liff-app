@@ -97,10 +97,12 @@ export async function createLiffApp(answers: Answers) {
     console.log();
     await install({ root, isYarn, dependencies, isDev: false, installNow });
 
-    console.log(`\n${installNow ? 'Installing' : 'Updating'} devDependencies:`);
-    devDependencies.forEach((dependency) => console.log(`- ${chalk.blue(dependency)}`));
-    console.log();
-    await install({ root, isYarn, dependencies: devDependencies, isDev: true, installNow });
+    if (devDependencies.length) {
+      console.log(`\n${installNow ? 'Installing' : 'Updating'} devDependencies:`);
+      devDependencies.forEach((dependency) => console.log(`- ${chalk.blue(dependency)}`));
+      console.log();
+      await install({ root, isYarn, dependencies: devDependencies, isDev: true, installNow });
+    }
 
     // Done
     showDoneComments({ projectName, installNow, isYarn });
@@ -340,24 +342,8 @@ const templates: Record<string, TemplateOptions> = {
   },
   nuxtjs: {
     envPrefix: '',
-    dependencies: [
-      '@line/liff',
-      '@nuxtjs/axios',
-      'core-js',
-      'nuxt',
-      'vue@2',
-      'vue-server-renderer@2',
-      'vue-template-compiler@2',
-      'webpack'
-    ],
-    devDependencies: [
-      '@babel/eslint-parser',
-      '@nuxtjs/eslint-config',
-      '@nuxtjs/eslint-module',
-      'eslint',
-      'eslint-plugin-nuxt',
-      'eslint-plugin-vue',
-    ],
-    tsDevDependencies: ['@nuxt/types', '@nuxt/typescript-build', '@nuxtjs/eslint-config-typescript'],
+    dependencies: ['@line/liff'],
+    devDependencies: [],
+    tsDevDependencies: [],
   },
 };
