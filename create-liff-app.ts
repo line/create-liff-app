@@ -35,32 +35,12 @@ export function init() {
 type PackageManager = 'npm' | 'yarn'
 
 export async function createLiffApp(answers: Answers) {
-  const { projectName, template, language, installNow, liffId } = answers;
+  const { projectName, template, language, liffId } = answers;
   const templateConfig = templates[template];
   const isTypescript = language === 'TypeScript';
   const cwd = process.cwd();
   const root = path.join(cwd, projectName);
-  const packageManager: PackageManager = installNow
-    ? await inquirer
-      .prompt({
-        type: 'list',
-        name: 'packageManager',
-        message: 'Which package manager do you want to use?',
-        choices: [
-          {
-            key: 'yarn',
-            value: 'yarn',
-            checked: true,
-          },
-          {
-            key: 'npm',
-            value: 'npm',
-            checked: false,
-          },
-        ],
-      })
-      .then(({ packageManager }) => packageManager as PackageManager)
-    : 'npm';
+  const packageManager = answers.packageManager as PackageManager;
 
   try {
     // create directory
@@ -92,20 +72,20 @@ export async function createLiffApp(answers: Answers) {
     const { dependencies, devDependencies, tsDevDependencies } = templateConfig;
     if (isTypescript) devDependencies.push(...tsDevDependencies);
 
-    console.log(`\n${installNow ? 'Installing' : 'Updating'} dependencies:`);
+    console.log('\nInstalling dependencies:');
     dependencies.forEach((dependency) => console.log(`- ${chalk.blue(dependency)}`));
     console.log();
-    await install({ root, isYarn, dependencies, isDev: false, installNow });
+    await install({ root, isYarn, dependencies, isDev: false });
 
     if (devDependencies.length) {
-      console.log(`\n${installNow ? 'Installing' : 'Updating'} devDependencies:`);
+      console.log('\nInstalling devDependencies:');
       devDependencies.forEach((dependency) => console.log(`- ${chalk.blue(dependency)}`));
       console.log();
-      await install({ root, isYarn, dependencies: devDependencies, isDev: true, installNow });
+      await install({ root, isYarn, dependencies: devDependencies, isDev: true });
     }
 
     // Done
-    showDoneComments({ projectName, installNow, isYarn });
+    showDoneComments({ projectName, isYarn });
   } catch(error) {
     console.error(error);
     process.exit(1);
@@ -151,17 +131,14 @@ function install({
   dependencies,
   isYarn,
   isDev,
-  installNow
 }: {
   root: string;
   dependencies: string[];
   isYarn: boolean;
   isDev: boolean;
-  installNow: boolean;
 }) {
   return new Promise<void>((resolve, reject) => {
     try {
-      // `isYarn` is false when `installNow` is false
       const command = isYarn ? 'yarnpkg' : 'npm';
       const args: string[] = [];
       if (isYarn) {
@@ -171,7 +148,6 @@ function install({
         args.push('install', '--save-exact', '--prefix', root);
         if (isDev) args.push('--save-dev');
       }
-      if (!installNow) args.push('--no-package-lock', '--package-lock-only');
       args.push(...dependencies);
 
       const child = spawn(command, args, {
@@ -183,10 +159,6 @@ function install({
           reject({ command: `${command} ${args.join(' ')}` });
           return;
         }
-
-        // deletes package-lock.json if it gets created, for some reason
-        if (!installNow) fs.rmSync(path.join(root, 'package-lock.json'));
-
         resolve();
       });
     } catch(error) {
@@ -195,16 +167,9 @@ function install({
   });
 }
 
-function showDoneComments({projectName, installNow, isYarn}: {projectName: string, installNow: boolean, isYarn: boolean}){
+function showDoneComments({ projectName, isYarn }: { projectName: string; isYarn: boolean }) {
   console.log('\n\nDone! Now run: \n');
   console.log(`  cd ${chalk.blue(projectName)}`);
-  if (!installNow) {
-    if (isYarn) {
-      console.log('  yarn');
-    } else {
-      console.log('  npm install');
-    }
-  }
   if (isYarn) {
     console.log('  yarn dev\n\n');
   } else {
@@ -295,9 +260,21 @@ const questions: Array<Question | ListQuestion> = [
     }
   },
   {
-    type: 'confirm',
-    name: 'installNow',
-    message: 'Do you want to install it now with package manager?'
+    type: 'list',
+    name: 'packageManager',
+    message: 'Which package manager do you want to use?',
+    choices: [
+      {
+        key: 'yarn',
+        value: 'yarn',
+        checked: true,
+      },
+      {
+        key: 'npm',
+        value: 'npm',
+        checked: false,
+      },
+    ],
   }
 ];
 
