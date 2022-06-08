@@ -36,7 +36,10 @@ type PackageManager = 'npm' | 'yarn'
 
 export async function createLiffApp(answers: Answers) {
   const { projectName, template, language, liffId } = answers;
-  const templateConfig = templates[template];
+  const templateConfig = templates[template] as TemplateOptions | undefined;
+  if (!templateConfig) {
+    throw new Error(`Invalid template name: ${template}`);
+  }
   const isTypescript = language === 'TypeScript';
   const cwd = process.cwd();
   const root = path.join(cwd, projectName);
