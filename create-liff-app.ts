@@ -197,7 +197,7 @@ const questions: Array<Question | ListQuestion> = [
         console.log(`\n${chalk.yellow('The project is already exists.')}`);
         return false;
       }
-
+      
       return true;
     },
   },
