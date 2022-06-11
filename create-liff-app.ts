@@ -44,10 +44,18 @@ export async function createLiffApp(answers: Answers) {
   const cwd = process.cwd();
   const root = path.join(cwd, projectName);
   const packageManager = answers.packageManager as PackageManager;
+  const isYarn = packageManager === 'yarn';
 
   try {
-    // create directory
-    fs.mkdirSync(root, { recursive: true });
+    if (templateConfig?.getCreateAppScript) {
+      // generate project using `create-app`
+      const script = templateConfig.getCreateAppScript({ isTypescript, isYarn, projectName });
+      console.log('\nGenerating liff app using `create-app`, this might take a while.\n');
+      await executeCreateAppScript(script);
+    } else {
+      // create directory
+      fs.mkdirSync(root, { recursive: true });
+    }
 
     // copy files
     const templateName = `${template}${isTypescript ? '-ts' : ''}`;
@@ -59,11 +67,13 @@ export async function createLiffApp(answers: Answers) {
       copy(src, dest);
     }
 
-    // create package.json
-    const packageName = isValidPackageName(projectName) ? projectName : toValidPackageName(projectName);
-    const pkg = require(path.join(templateDir, 'package.json'));
-    pkg.name = packageName;
-    fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify(pkg, null, 2));
+    if (!templateConfig?.getCreateAppScript) {
+      // create package.json
+      const packageName = isValidPackageName(projectName) ? projectName : toValidPackageName(projectName);
+      const pkg = require(path.join(templateDir, 'package.json'));
+      pkg.name = packageName;
+      fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify(pkg, null, 2));
+    }
 
     // create .env file
     const content = `${templateConfig.envPrefix}LIFF_ID=${liffId}`;
@@ -71,7 +81,6 @@ export async function createLiffApp(answers: Answers) {
     fs.writeFileSync(path.join(root, envFileName), content);
 
     // install
-    const isYarn = packageManager === 'yarn';
     const { dependencies, devDependencies, tsDevDependencies } = templateConfig;
     if (isTypescript) devDependencies.push(...tsDevDependencies);
 
@@ -127,6 +136,27 @@ function toValidPackageName(name: string): string {
     .replace(/\s+/g, '-')
     .replace(/^[._]/, '')
     .replace(/[^a-z0-9-~]+/g, '-');
+}
+
+function executeCreateAppScript(script: string[]) {
+  return new Promise<void>((resolve, reject) => {
+    try {
+      const [command, ...args] = script;
+      const child = spawn(command, args, {
+        stdio: 'inherit',
+        env: { ...process.env, ADBLOCK: '1', DISABLE_OPENCOLLECTIVE: '1' },
+      });
+      child.on('close', (code) => {
+        if (code !== 0) {
+          reject({ command: `${command} ${args.join(' ')}` });
+          return;
+        }
+        resolve();
+      });
+    } catch (error) {
+      reject(`Error occurred during installation: ${error}`);
+    }
+  });
 }
 
 function install({
@@ -287,6 +317,12 @@ type TemplateOptions = {
   dependencies: string[];
   devDependencies: string[];
   tsDevDependencies: string[];
+  getCreateAppScript?: (args: CreateAppScriptOptions) => string[];
+};
+type CreateAppScriptOptions = {
+  isTypescript: boolean;
+  isYarn: boolean;
+  projectName: string;
 };
 const templates: Record<string, TemplateOptions> = {
   vanilla: {
@@ -316,14 +352,44 @@ const templates: Record<string, TemplateOptions> = {
   nextjs: {
     envPrefix: 'NEXT_PUBLIC_',
     envFileNameVariant: '.env.local',
-    dependencies: ['@line/liff', 'next', 'react', 'react-dom'],
-    devDependencies: ['eslint', 'eslint-config-next'],
-    tsDevDependencies: ['@types/node', '@types/react', '@types/react-dom', 'typescript'],
+    dependencies: ['@line/liff'],
+    devDependencies: [],
+    tsDevDependencies: [],
+    getCreateAppScript: ({ isTypescript, isYarn, projectName }) => {
+      const script = [];
+      if (isYarn) {
+        script.push('yarnpkg', 'create', 'next-app');
+      } else {
+        script.push('npx', 'create-next-app', '--use-npm');
+      }
+      script.push(projectName);
+      if (isTypescript) script.push('--ts');
+
+      return script;
+    },
   },
   nuxtjs: {
     envPrefix: '',
     dependencies: ['@line/liff'],
     devDependencies: [],
     tsDevDependencies: [],
+    getCreateAppScript: ({ isTypescript, isYarn, projectName }) => {
+      const answers = {
+        name: projectName,
+        pm: isYarn ? 'yarn' : 'npm',
+        language: isTypescript ? 'ts' : 'js',
+        features: ['axios'],
+        linter: ['eslint'],
+        ui: 'none',
+        test: 'none',
+        mode: 'universal',
+        target: 'server',
+        devTools: 'none',
+        vcs: 'none',
+      };
+      const script = ['npx', 'create-nuxt-app', projectName, '--answers', JSON.stringify(answers)];
+
+      return script;
+    },
   },
 };
