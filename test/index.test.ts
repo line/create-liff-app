@@ -8,11 +8,16 @@ const projectName = 'test-app';
 const projectPath = path.join(__dirname, projectName);
 const ENTER = '\x0D';
 
+// Increase timeout
+jest.setTimeout(1000 * 60 * (process.env.RUNNER_OS === 'macOS' ? 10 : 5));
+
 const rename: Record<string, string> = {
   '.gitignore.default': '.gitignore'
 };
 const generatedFiles = [
-  '.env'
+  '.env',
+  'node_modules',
+  'yarn.lock'
 ];
 
 function removeProject() {
@@ -51,17 +56,13 @@ afterAll(async () => {
   removeProject();
 });
 
+const commands = {
+  vanilla: [projectName, ENTER, ENTER, ENTER, ENTER, ENTER],
+};
+
 describe('create-liff-app', () => {
   it('files properly created', async () => {
-    const result = await installProject([
-      projectName,
-      ENTER,
-      ENTER,
-      ENTER,
-      ENTER,
-      'n'
-    ]);
-
+    const result = await installProject(commands.vanilla);
     const templateFiles = fs.readdirSync(templatePath).map(f => rename[f] ? rename[f] : f);
     const expectedFiles = templateFiles.concat(generatedFiles);
     expect(result.files.sort()).toEqual(expectedFiles.sort());
