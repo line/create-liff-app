@@ -5,11 +5,5 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
-  },
-  "dependencies": {
-    "@line/liff": "2.20.1"
-  },
-  "devDependencies": {
-    "vite": "^2.7.2"
   }
 }

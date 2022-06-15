@@ -21,24 +21,6 @@ import chalk from 'chalk';
 import validate from 'validate-npm-package-name';
 import inquirer, { ListQuestion, Question } from 'inquirer';
 
-const envPrefix: Record<string, string> = {
-  vanilla: 'VITE_',
-  'vanilla-ts': 'VITE_',
-  react: 'VITE_',
-  'react-ts': 'VITE_',
-  vue: 'VITE_',
-  'vue-ts': 'VITE_',
-  svelte: 'VITE_',
-  'svelte-ts': 'VITE_',
-  nextjs: 'NEXT_PUBLIC_',
-  'nextjs-ts': 'NEXT_PUBLIC_',
-  nuxtjs: '',
-  'nuxtjs-ts': ''
-};
-const envFileNameVariant: Record<string, string> = {
-  nextjs: '.env.local',
-  'nextjs-ts': '.env.local',
-};
 const rename: Record<string, string> = {
   '.gitignore.default': '.gitignore'
 };
@@ -47,40 +29,36 @@ export function init() {
   console.log(
     `${chalk.greenBright('Welcome')} to the ${chalk.cyan('Create LIFF App')}`
   );
-  prompt(questions).then(async (answers) => await createLiffApp(answers));  
+  prompt(questions).then(async (answers) => await createLiffApp(answers));
 }
 
 type PackageManager = 'npm' | 'yarn'
 
 export async function createLiffApp(answers: Answers) {
-  const { projectName, template, language, installNow, liffId } = answers;
-  const packageManager: PackageManager = installNow ? await inquirer.prompt({
-    type: 'list',
-    name: 'packageManager',
-    message: 'Which package manager do you want to use?',
-    choices: [
-      {
-        key: 'yarn',
-        value: 'yarn',
-        checked: true,
-      },
-      {
-        key: 'npm',
-        value: 'npm',
-        checked: false,
-      },
-    ],
-  }).then(({ packageManager }) => packageManager as PackageManager) : 'npm';
-  
-  const templateName = `${template}${language === 'JavaScript' ? '' : '-ts'}`;
+  const { projectName, template, language, liffId } = answers;
+  const templateConfig = templates[template] as TemplateOptions | undefined;
+  if (!templateConfig) {
+    throw new Error(`Invalid template name: ${template}`);
+  }
+  const isTypescript = language === 'TypeScript';
   const cwd = process.cwd();
   const root = path.join(cwd, projectName);
+  const packageManager = answers.packageManager as PackageManager;
+  const isYarn = packageManager === 'yarn';
 
   try {
-    // create directory
-    fs.mkdirSync(root, { recursive: true });
+    if (templateConfig?.getCreateAppScript) {
+      // generate project using `create-app`
+      const script = templateConfig.getCreateAppScript({ isTypescript, isYarn, projectName });
+      console.log('\nGenerating liff app using `create-app`, this might take a while.\n');
+      await executeCreateAppScript(script);
+    } else {
+      // create directory
+      fs.mkdirSync(root, { recursive: true });
+    }
 
     // copy files
+    const templateName = `${template}${isTypescript ? '-ts' : ''}`;
     const templateDir = path.join(__dirname, '../templates', templateName);
     const files = fs.readdirSync(templateDir);
     for(const file of files.filter(f => f !== 'package.json')) {
@@ -89,25 +67,37 @@ export async function createLiffApp(answers: Answers) {
       copy(src, dest);
     }
 
-    // create package.json
-    const packageName = isValidPackageName(projectName) ? projectName : toValidPackageName(projectName);
-    const pkg = require(path.join(templateDir, 'package.json'));
-    pkg.name = packageName;
-    fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify(pkg, null, 2));
+    if (!templateConfig?.getCreateAppScript) {
+      // create package.json
+      const packageName = isValidPackageName(projectName) ? projectName : toValidPackageName(projectName);
+      const pkg = require(path.join(templateDir, 'package.json'));
+      pkg.name = packageName;
+      fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify(pkg, null, 2));
+    }
 
     // create .env file
-    const content = `${envPrefix[templateName]}LIFF_ID=${liffId}`;
-    const envFileName = envFileNameVariant[templateName] || '.env';
+    const content = `${templateConfig.envPrefix}LIFF_ID=${liffId}`;
+    const envFileName = templateConfig?.envFileNameVariant || '.env';
     fs.writeFileSync(path.join(root, envFileName), content);
 
     // install
-    const isYarn = packageManager === 'yarn';
-    if (installNow) {
-      await install(root, isYarn);
+    const { dependencies, devDependencies, tsDevDependencies } = templateConfig;
+    if (isTypescript) devDependencies.push(...tsDevDependencies);
+
+    console.log('\nInstalling dependencies:');
+    dependencies.forEach((dependency) => console.log(`- ${chalk.blue(dependency)}`));
+    console.log();
+    await install({ root, isYarn, dependencies, isDev: false });
+
+    if (devDependencies.length) {
+      console.log('\nInstalling devDependencies:');
+      devDependencies.forEach((dependency) => console.log(`- ${chalk.blue(dependency)}`));
+      console.log();
+      await install({ root, isYarn, dependencies: devDependencies, isDev: true });
     }
 
     // Done
-    showDoneComments({ projectName, installNow, isYarn });
+    showDoneComments({ projectName, isYarn });
   } catch(error) {
     console.error(error);
     process.exit(1);
@@ -148,11 +138,51 @@ function toValidPackageName(name: string): string {
     .replace(/[^a-z0-9-~]+/g, '-');
 }
 
-function install(root: string, isYarn: boolean) {
+function executeCreateAppScript(script: string[]) {
+  return new Promise<void>((resolve, reject) => {
+    try {
+      const [command, ...args] = script;
+      const child = spawn(command, args, {
+        stdio: 'inherit',
+        env: { ...process.env, ADBLOCK: '1', DISABLE_OPENCOLLECTIVE: '1' },
+      });
+      child.on('close', (code) => {
+        if (code !== 0) {
+          reject({ command: `${command} ${args.join(' ')}` });
+          return;
+        }
+        resolve();
+      });
+    } catch (error) {
+      reject(`Error occurred during installation: ${error}`);
+    }
+  });
+}
+
+function install({
+  root,
+  dependencies,
+  isYarn,
+  isDev,
+}: {
+  root: string;
+  dependencies: string[];
+  isYarn: boolean;
+  isDev: boolean;
+}) {
   return new Promise<void>((resolve, reject) => {
     try {
       const command = isYarn ? 'yarnpkg' : 'npm';
-      const args = ['install', isYarn ? '--cwd' : '--prefix', root];
+      const args: string[] = [];
+      if (isYarn) {
+        args.push('add', '--exact', '--cwd', root);
+        if (isDev) args.push('--dev');
+      } else {
+        args.push('install', '--save-exact', '--prefix', root);
+        if (isDev) args.push('--save-dev');
+      }
+      args.push(...dependencies);
+
       const child = spawn(command, args, {
         stdio: 'inherit',
         env: { ...process.env, ADBLOCK: '1', DISABLE_OPENCOLLECTIVE: '1' }
@@ -170,16 +200,9 @@ function install(root: string, isYarn: boolean) {
   });
 }
 
-function showDoneComments({projectName, installNow, isYarn}: {projectName: string, installNow: boolean, isYarn: boolean}){
+function showDoneComments({ projectName, isYarn }: { projectName: string; isYarn: boolean }) {
   console.log('\n\nDone! Now run: \n');
   console.log(`  cd ${chalk.blue(projectName)}`);
-  if (!installNow) {
-    if (isYarn) {
-      console.log('  yarn');
-    } else {
-      console.log('  npm install');
-    }
-  }
   if (isYarn) {
     console.log('  yarn dev\n\n');
   } else {
@@ -270,8 +293,103 @@ const questions: Array<Question | ListQuestion> = [
     }
   },
   {
-    type: 'confirm',
-    name: 'installNow',
-    message: 'Do you want to install it now with package manager?'
+    type: 'list',
+    name: 'packageManager',
+    message: 'Which package manager do you want to use?',
+    choices: [
+      {
+        key: 'yarn',
+        value: 'yarn',
+        checked: true,
+      },
+      {
+        key: 'npm',
+        value: 'npm',
+        checked: false,
+      },
+    ],
   }
 ];
+
+type TemplateOptions = {
+  envPrefix: string;
+  envFileNameVariant?: string;
+  dependencies: string[];
+  devDependencies: string[];
+  tsDevDependencies: string[];
+  getCreateAppScript?: (args: CreateAppScriptOptions) => string[];
+};
+type CreateAppScriptOptions = {
+  isTypescript: boolean;
+  isYarn: boolean;
+  projectName: string;
+};
+const templates: Record<string, TemplateOptions> = {
+  vanilla: {
+    envPrefix: 'VITE_',
+    dependencies: ['@line/liff'],
+    devDependencies: ['vite'],
+    tsDevDependencies: ['typescript'],
+  },
+  react: {
+    envPrefix: 'VITE_',
+    dependencies: ['@line/liff', 'react', 'react-dom'],
+    devDependencies: ['@vitejs/plugin-react', 'vite'],
+    tsDevDependencies: ['@types/react', '@types/react-dom', 'typescript'],
+  },
+  vue: {
+    envPrefix: 'VITE_',
+    dependencies: ['@line/liff', 'vue'],
+    devDependencies: ['@vitejs/plugin-vue', 'vite'],
+    tsDevDependencies: ['typescript', 'vue-tsc'],
+  },
+  svelte: {
+    envPrefix: 'VITE_',
+    dependencies: ['@line/liff'],
+    devDependencies: ['@sveltejs/vite-plugin-svelte', 'svelte', 'vite'],
+    tsDevDependencies: ['@tsconfig/svelte', 'svelte-check', 'svelte-preprocess', 'tslib', 'typescript'],
+  },
+  nextjs: {
+    envPrefix: 'NEXT_PUBLIC_',
+    envFileNameVariant: '.env.local',
+    dependencies: ['@line/liff'],
+    devDependencies: [],
+    tsDevDependencies: [],
+    getCreateAppScript: ({ isTypescript, isYarn, projectName }) => {
+      const script = [];
+      if (isYarn) {
+        script.push('yarnpkg', 'create', 'next-app');
+      } else {
+        script.push('npx', 'create-next-app', '--use-npm');
+      }
+      script.push(projectName);
+      if (isTypescript) script.push('--ts');
+
+      return script;
+    },
+  },
+  nuxtjs: {
+    envPrefix: '',
+    dependencies: ['@line/liff'],
+    devDependencies: [],
+    tsDevDependencies: [],
+    getCreateAppScript: ({ isTypescript, isYarn, projectName }) => {
+      const answers = {
+        name: projectName,
+        pm: isYarn ? 'yarn' : 'npm',
+        language: isTypescript ? 'ts' : 'js',
+        features: ['axios'],
+        linter: ['eslint'],
+        ui: 'none',
+        test: 'none',
+        mode: 'universal',
+        target: 'server',
+        devTools: 'none',
+        vcs: 'none',
+      };
+      const script = ['npx', 'create-nuxt-app', projectName, '--answers', JSON.stringify(answers)];
+
+      return script;
+    },
+  },
+};
