@@ -10,6 +10,7 @@ Start developing LIFF application with a simple CLI command.
 - [Getting Started](#getting-started)
   - [Create LIFF Channel](#create-liff-channel)
   - [Installation](#installation)
+  - [Options](#options)
 - [License](#license)
 
 ## About
@@ -32,11 +33,28 @@ Before you run `create-liff-app`, we recommend creating a LIFF Channel first. Se
 
 ### Installation
 
-Run npm command like: 
-```
-$ npx @line/create-liff-app
+Run npm command like:
+```bash
+npx @line/create-liff-app
 ```
 
+To create a new app in a specific folder, you can send a name as an argument.
+```bash
+npx @line/create-liff-app my-app
+```
+
+### Options
+
+`create-liff-app` comes with the following options:
+
+- **-t, --template &lt;template&gt;** - A template to bootstrap the app with. (available templates: "vanilla", "react", "vue", "svelte", "nextjs", "nuxtjs")
+- **-l, --id, --liffid &lt;liff id&gt;** - Liff id. For more information, please visit <https://developers.line.biz/ja/docs/liff/getting-started/>
+- **--js, --javascript** - Initialize as a JavaScript project
+- **--ts, --typescript** - Initialize as a TypeScript project
+- **--npm, --use-npm** - Bootstrap the app using npm
+- **--yarn, --use-yarn** - Bootstrap the app using yarn
+- **-v, --version** - output the version number
+- **-h, --help** - display help for command
 
 ## [License](https://github.com/line/create-liff-app/blob/master/LINCENSE.txt)
 
