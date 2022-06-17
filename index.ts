@@ -33,7 +33,7 @@ function parseFlags() {
       new Option('-t, --template <template>', 'Choose a template to bootstrap the app with').choices(templateNames)
     )
     .option(
-      '-l, --id, --liffid <liff id>',
+      '-l, --liffid <liff id>',
       'Liff id. For more information, please visit https://developers.line.biz/ja/docs/liff/getting-started/'
     )
     .option('--js, --javascript', 'Initialize as a JavaScript project')

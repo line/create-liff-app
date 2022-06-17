@@ -48,7 +48,7 @@ npx @line/create-liff-app my-app
 `create-liff-app` comes with the following options:
 
 - **-t, --template &lt;template&gt;** - A template to bootstrap the app with. (available templates: "vanilla", "react", "vue", "svelte", "nextjs", "nuxtjs")
-- **-l, --id, --liffid &lt;liff id&gt;** - Liff id. For more information, please visit <https://developers.line.biz/ja/docs/liff/getting-started/>
+- **-l, --liffid &lt;liff id&gt;** - Liff id. For more information, please visit <https://developers.line.biz/ja/docs/liff/getting-started/>
 - **--js, --javascript** - Initialize as a JavaScript project
 - **--ts, --typescript** - Initialize as a TypeScript project
 - **--npm, --use-npm** - Bootstrap the app using npm
