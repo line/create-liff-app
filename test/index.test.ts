@@ -31,8 +31,8 @@ function timeout(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function installProject(inputs: string[]): Promise<{ files: string[], exitCode: number | null }>{
-  const result = execa('node', [cliPath], { cwd: __dirname });
+async function installProject({ args = [] as string[], inputs = [] as string[] }) {
+  const result = execa('node', [cliPath, ...args], { cwd: __dirname });
   result.stdout?.on('data', chunk =>
     process.stdout.write(chunk.toString('utf8'))
   );
@@ -59,10 +59,21 @@ afterAll(async () => {
 const commands = {
   vanilla: [projectName, ENTER, ENTER, ENTER, ENTER, ENTER],
 };
+const flags = {
+  vanilla: [projectName, '-t', 'vanilla', '-l', 'id', '--js', '--use-npm'],
+};
 
 describe('create-liff-app', () => {
   it('files properly created', async () => {
-    const result = await installProject(commands.vanilla);
+    const result = await installProject({ inputs: commands.vanilla });
+    const templateFiles = fs.readdirSync(templatePath).map(f => rename[f] ? rename[f] : f);
+    const expectedFiles = templateFiles.concat(generatedFiles);
+    expect(result.files.sort()).toEqual(expectedFiles.sort());
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('creates app using only flags', async () => {
+    const result = await installProject({ args: flags.vanilla });
     const templateFiles = fs.readdirSync(templatePath).map(f => rename[f] ? rename[f] : f);
     const expectedFiles = templateFiles.concat(generatedFiles);
     expect(result.files.sort()).toEqual(expectedFiles.sort());
