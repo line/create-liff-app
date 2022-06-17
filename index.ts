@@ -14,6 +14,53 @@
 * under the License.
 */
 
-import { init } from './create-liff-app';
+import { Command, Option } from 'commander';
+import packageJson from './package.json';
+import { init, templateNames } from './create-liff-app';
+import type { Answers } from 'inquirer';
 
-init();
+const answers = parseFlags();
+init(answers);
+
+function parseFlags() {
+  const answers: Answers = {};
+
+  new Command(packageJson.name)
+    .version(packageJson.version, '-v, --version')
+    .usage('[project name] [options]')
+    .arguments('[projectName]')
+    .addOption(
+      new Option('-t, --template <template>', 'Choose a template to bootstrap the app with').choices(templateNames)
+    )
+    .option(
+      '-l, --id, --liffid <liff id>',
+      'Liff id. For more information, please visit https://developers.line.biz/ja/docs/liff/getting-started/'
+    )
+    .option('--js, --javascript', 'Initialize as a JavaScript project')
+    .option('--ts, --typescript', 'Initialize as a TypeScript project')
+    .option('--npm, --use-npm', 'Bootstrap the app using npm')
+    .option('--yarn, --use-yarn', 'Bootstrap the app using yarn')
+    .action((projectName, options) => {
+      const { template, liffid, javascript, typescript, useNpm, useYarn } = options;
+
+      // projectName
+      if (typeof projectName === 'string') answers.projectName = projectName;
+
+      // template
+      if (typeof template === 'string') answers.template = template;
+
+      // liffId
+      if (typeof liffid === 'string') answers.liffId = liffid;
+
+      // language
+      if (javascript) answers.language = 'JavaScript';
+      if (typescript) answers.language = 'TypeScript';
+
+      // packageManager
+      if (useNpm) answers.packageManager = 'npm';
+      if (useYarn) answers.packageManager = 'yarn';
+    })
+    .parse(process.argv);
+
+  return answers;
+}
