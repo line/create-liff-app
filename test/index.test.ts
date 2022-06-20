@@ -49,10 +49,10 @@ async function installProject({ args = [] as string[], inputs = [] as string[] }
   };
 }
 
-beforeAll(() => {
+beforeEach(() => {
   removeProject();
 });
-afterAll(async () => {
+afterEach(async () => {
   removeProject();
 });
 
@@ -60,7 +60,7 @@ const commands = {
   vanilla: [projectName, ENTER, ENTER, ENTER, ENTER, ENTER],
 };
 const flags = {
-  vanilla: [projectName, '-t', 'vanilla', '-l', 'id', '--js', '--use-npm'],
+  vanilla: [projectName, '-t', 'vanilla', '-l', 'id', '--js', '--use-yarn'],
 };
 
 describe('create-liff-app', () => {
