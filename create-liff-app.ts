@@ -25,11 +25,11 @@ const rename: Record<string, string> = {
   '.gitignore.default': '.gitignore'
 };
 
-export function init() {
+export function init(answers: Answers = {}) {
   console.log(
     `${chalk.greenBright('Welcome')} to the ${chalk.cyan('Create LIFF App')}`
   );
-  prompt(questions).then(async (answers) => await createLiffApp(answers));
+  prompt(questions, answers).then(async (answers) => await createLiffApp(answers));
 }
 
 type PackageManager = 'npm' | 'yarn'
@@ -393,3 +393,4 @@ const templates: Record<string, TemplateOptions> = {
     },
   },
 };
+export const templateNames = Object.keys(templates);
