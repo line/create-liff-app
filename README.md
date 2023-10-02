@@ -16,7 +16,7 @@ Start developing LIFF application with a simple CLI command.
 ## About
 
 ### LIFF
-LINE Front-end Framework (LIFF) is a platform for web apps provided by LINE. The web apps running on this platform are called LIFF apps.
+LINE Front-end Framework (LIFF) is a platform for web apps provided by LY Corporation. The web apps running on this platform are called LIFF apps.
 
 Do you want to know more about LIFF? [Learn more](https://developers.line.biz/en/docs/liff/overview/)
 
