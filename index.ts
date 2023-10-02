@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /* Copyright 2023 LY Corporation
 
 * LY Corporation licenses this file to you under the Apache License,
