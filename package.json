@@ -11,8 +11,12 @@
     "watch": "tsc -w",
     "start": "yarn build && node dist/index.js",
     "test": "yarn build && jest",
-    "lint:eslint": "eslint '**/*.{ts,js}'",
-    "fix:eslint": "yarn lint:eslint --fix"
+    "lint": "eslint '**/*.{ts,js}'",
+    "fix:lint": "yarn lint --fix",
+    "format": "prettier --check '**/*.{ts,js,json,md}'",
+    "fix:format": "prettier --write .",
+    "code-check": "yarn run lint && yarn run build && yarn run test",
+    "publish": "yarn run code-check && yarn run build && yarn npm publish --access public"
   },
   "keywords": [
     "LINE",
