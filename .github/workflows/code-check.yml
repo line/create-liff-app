@@ -1,0 +1,31 @@
+name: Check code health
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Run lint
+        run: yarn lint:eslint
+
+      - name: Run build
+        run: yarn build
+
+      - name: Run test
+        run: yarn test
