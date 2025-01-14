@@ -17,6 +17,7 @@ jobs:
         with:
           node-version: 22.x
           cache: yarn
+          always-auth: true
 
       - run: yarn install
       - run: yarn build
