@@ -3,6 +3,7 @@ tag-template: 'v$RESOLVED_VERSION'
 template: |
   # What's Changed
   $CHANGES
+
   **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
 commitish: refs/heads/main
 
