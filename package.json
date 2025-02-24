@@ -1,6 +1,6 @@
 {
   "name": "@line/create-liff-app",
-  "version": "1.1.0",
+  "version": "1.1.5",
   "description": "Start developing LIFF application with a simple CLI command.",
   "repository": {
     "type": "git",
@@ -11,12 +11,8 @@
     "watch": "tsc -w",
     "start": "yarn build && node dist/index.js",
     "test": "yarn build && jest",
-    "lint": "eslint '**/*.{ts,js}'",
-    "fix:lint": "yarn lint --fix",
-    "format": "prettier --check '**/*.{ts,js,json,md}'",
-    "fix:format": "prettier --write .",
-    "code-check": "yarn run lint && yarn run build && yarn run test",
-    "publish": "yarn run code-check && yarn run build && yarn npm publish --access public"
+    "lint:eslint": "eslint '**/*.{ts,js}'",
+    "fix:eslint": "yarn lint:eslint --fix"
   },
   "keywords": [
     "LINE",
@@ -60,5 +56,11 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
-  }
+  },
+  "files": [
+    "dist",
+    "templates",
+    "README.md",
+    "LICENSE.txt"
+  ]
 }

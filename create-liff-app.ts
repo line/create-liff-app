@@ -384,6 +384,7 @@ const templates: Record<string, TemplateOptions> = {
         test: 'none',
         mode: 'universal',
         target: 'server',
+        template: 'html',
         devTools: 'none',
         vcs: 'none',
       };
