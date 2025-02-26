@@ -19,7 +19,7 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable --immutable-cache --check-cache
       - name: Run lint
-        run: yarn run lint
+        run: yarn run lint:eslint
       - name: Run build
         run: yarn run build
       - name: Run test
