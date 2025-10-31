@@ -1,15 +1,12 @@
-import Head from "next/head";
-import styles from "../styles/Home.module.css";
+"use client";
+import { useLIFF } from "../providers/liff-providers";
+import styles from "../styles/App.module.css";
 
-export default function Home({ liff, liffError }) {
+export default function Home() {
+  const { liff, liffError } = useLIFF();
+
   return (
     <div>
-      <Head>
-        <title>LIFF App</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
       <main className={styles.main}>
         <h1>create-liff-app</h1>
         {liff && <p>LIFF init succeeded.</p>}
