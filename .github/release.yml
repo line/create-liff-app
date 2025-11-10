@@ -1,0 +1,22 @@
+changelog:
+  exclude:
+    labels:
+      - 'type: question'
+      - 'type: discussion'
+      - 'type: release'
+
+  categories:
+    - title: 'Breaking Changes'
+      labels: ['type: breaking']
+    - title: 'New Features'
+      labels: ['type: feature']
+    - title: 'Bug Fixes'
+      labels: ['type: bug']
+    - title: 'Maintenance'
+      labels: ['type: maintenance']
+    - title: 'Documentation'
+      labels: ['type: documentation']
+    - title: 'Dependency Updates'
+      labels: ['type: dependencies']
+    - title: 'Other changes'
+      labels: ['*']
