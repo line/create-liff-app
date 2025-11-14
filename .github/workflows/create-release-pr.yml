@@ -50,11 +50,38 @@ jobs:
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           script: |
-            const { data } = await github.rest.repos.generateReleaseNotes({
+            // --- Get latest release (previous tag) ---
+            let lastTag = "";
+            try {
+              const { data: latestRelease } = await github.rest.repos.getLatestRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              });
+              lastTag = latestRelease.tag_name;
+              core.info(`Previous release found: ${lastTag}`);
+            } catch (error) {
+              core.info("No previous release found — this will be the first release.");
+            }
+
+            // --- Get default branch ---
+            const { data: repoData } = await github.rest.repos.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              tag_name: `v${process.env.PACKAGE_VERSION}`
             });
+            const defaultBranch = repoData.default_branch;
+            core.info(`Default branch: ${defaultBranch}`);
+
+            // --- Generate release notes ---
+            const params = {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: `v${process.env.PACKAGE_VERSION}`,
+              target_commitish: defaultBranch,
+            };
+            if (lastTag) {
+              params.previous_tag_name = lastTag;
+            }
+            const { data } = await github.rest.repos.generateReleaseNotes(params);
             core.setOutput('stdout', data.body);
         env:
           PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}
