@@ -40,9 +40,9 @@ jobs:
           SEMVER: ${{ github.event.inputs.semver }}
           GIT_AUTHOR_NAME: ${{ github.actor }}
           GIT_AUTHOR_EMAIL: ${{ github.actor }}@users.noreply.github.com
-      - name: Update package-lock.json
+      - name: Update yarn.lock
         run: |
-          npm install
+          yarn install
       - name: Set PACKAGE_VERSION
         run: echo "PACKAGE_VERSION=$(cat package.json | jq -r .version)" >> $GITHUB_ENV
       - name: Set GitHub Release Note
