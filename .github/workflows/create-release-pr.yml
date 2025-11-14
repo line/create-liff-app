@@ -75,6 +75,7 @@ jobs:
           body: |
             ${{ steps.release_note.outputs.stdout }}
           labels: 'type: release'
+          draft: true
       - name: Check Pull Request
         run: |
           echo "Pull Request Number - ${STEPS_CPR_OUTPUTS_PULL_REQUEST_NUMBER}"
