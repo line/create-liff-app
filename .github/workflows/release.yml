@@ -1,0 +1,140 @@
+# This workflow often runs following steps when a PR is merged to main branch.
+# 1. jobs.check checks if we need to release
+# 2. jobs.release publish packages
+#
+# Note: Force publish
+# You can publish packages manually by running workflow dispatch
+# This workflow dispatch skip jobs.check process
+# 1. dispatch "release" workflow
+# 2. Open Release Page
+# 3. Generate Release Note
+name: Release
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [closed]
+  workflow_dispatch: # force release
+
+jobs:
+  check:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    # when release PR is merged with type: release label or workflow_dispatch is triggered from default branch, run this job
+    if: |
+      (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'type: release')) || 
+      (github.event_name == 'workflow_dispatch' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))
+    outputs:
+      EXISTS_TAG: ${{ steps.tag_check.outputs.EXISTS_TAG }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          persist-credentials: false
+      - name: Set PACKAGE_VERSION
+        run: echo "PACKAGE_VERSION=$(cat package.json | jq -r .version)" >> $GITHUB_ENV
+      - name: Tag Check
+        id: tag_check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              await github.rest.git.getRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `tags/v${process.env.PACKAGE_VERSION}`
+              });
+              core.setOutput('EXISTS_TAG', 'true');
+            } catch (error) {
+              if (error.status === 404) {
+                core.setOutput('EXISTS_TAG', 'false');
+              } else {
+                throw error;
+              }
+            }
+        env:
+          PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}
+
+  release:
+    runs-on: ubuntu-latest
+    environment:
+      name: npm
+    needs: check
+    if: always() && (needs.check.outputs.EXISTS_TAG == 'false')
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          cache: yarn
+          node-version-file: .nvmrc
+          registry-url: 'https://registry.npmjs.org'
+      - name: Git Identity
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          host="${SERVER_URL#https://}"
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@${host}/${GITHUB_REPOSITORY}"
+        env:
+          SERVER_URL: ${{ github.server_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set PACKAGE_VERSION
+        run: echo "PACKAGE_VERSION=$(cat package.json | jq -r .version)" >> $GITHUB_ENV
+      - name: Install npm 11.5.1+ for OIDC support
+        # npm 11.5.1+ is required for GitHub OIDC trusted publishing
+        # https://docs.npmjs.com/trusted-publishers
+        run: |
+          npm install -g npm@^11.5.1
+          echo "npm version: $(npm --version)"
+      - name: Install dependencies
+        run: yarn install
+      - name: Run build
+        run: yarn run build
+      - name: Publish
+        run: npm publish --tag latest --access public
+        env:
+          NPM_CONFIG_PROVENANCE: true
+      - name: Create Git Tag
+        uses: pkgdeps/git-tag-action@ef111413f44ebe5cc05994e7f5b5b9edaaada08d # v3.0.0
+        with:
+          version: ${{ env.PACKAGE_VERSION }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_repo: ${{ github.repository }}
+          git_commit_sha: ${{ github.sha }}
+          git_tag_prefix: 'v'
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2.3.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ env.PACKAGE_VERSION }}
+          # Copy Pull Request's title and body to Release Note
+          name: ${{ github.event.pull_request.title }}
+          body: ${{ github.event.pull_request.body }}
+          draft: false
+          prerelease: false
+          generate_release_notes: ${{ !github.event.pull_request.body }}
+      - uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        if: github.event_name != 'workflow_dispatch'
+        env:
+          SERVER_URL: ${{ github.server_url }}
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🎉 Release ${process.env.SERVER_URL}/${context.repo.owner}/${context.repo.repo}/releases/tag/v${process.env.PACKAGE_VERSION}`
+            })
