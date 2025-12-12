@@ -1,6 +1,6 @@
 "use client";
 import { useLIFF } from "../providers/liff-providers";
-import styles from "../styles/App.module.css";
+import styles from "./page.module.css";
 
 export default function Home() {
   const { liff, liffError } = useLIFF();
