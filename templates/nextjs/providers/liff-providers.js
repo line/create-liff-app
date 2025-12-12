@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 const LIFFContext = createContext({
   liff: null,
@@ -11,9 +11,9 @@ function LIFFProvider({ children }) {
   const [liffObject, setLiffObject] = useState(null);
   const [liffError, setLiffError] = useState(null);
 
-  // 在组件挂载时执行 liff.init()
+  // Execute liff.init() when the app is initialized
   useEffect(() => {
-    // 动态导入 @line/liff，以避免在 Next.js 服务端渲染时出现 window is not defined 的错误
+    // to avoid `window is not defined` error
     import("@line/liff")
       .then((liff) => liff.default)
       .then((liff) => {

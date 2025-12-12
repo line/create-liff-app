@@ -1,4 +1,5 @@
 import { LIFFProvider } from "../providers/liff-providers";
+import "./globals.css";
 
 export const metadata = {
   title: "LIFF App",
@@ -14,7 +15,7 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="jp">
+    <html lang="en">
       <body>
         <LIFFProvider>{children}</LIFFProvider>
       </body>
