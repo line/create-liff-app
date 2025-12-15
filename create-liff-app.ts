@@ -35,7 +35,7 @@ export function init(answers: Answers = {}) {
 type PackageManager = 'npm' | 'yarn'
 
 export async function createLiffApp(answers: Answers) {
-  const { projectName, template, language, liffId, isAppRouter } = answers;
+  const { projectName, template, language, liffId } = answers;
   const templateConfig = templates[template] as TemplateOptions | undefined;
   if (!templateConfig) {
     throw new Error(`Invalid template name: ${template}`);
@@ -49,7 +49,7 @@ export async function createLiffApp(answers: Answers) {
   try {
     if (templateConfig?.getCreateAppScript) {
       // generate project using `create-app`
-      const script = templateConfig.getCreateAppScript({ isTypescript, isYarn, projectName, isAppRouter });
+      const script = templateConfig.getCreateAppScript({ isTypescript, isYarn, projectName });
       console.log('\nGenerating liff app using `create-app`, this might take a while.\n');
       await executeCreateAppScript(script);
     } else {
@@ -65,21 +65,6 @@ export async function createLiffApp(answers: Answers) {
       const src = path.join(templateDir, file);
       const dest = rename[file] ? path.join(root, rename[file]) : path.join(root, file);
       copy(src, dest);
-    }
-
-    if (template === 'nextjs') {
-      const appDir = path.join(root, 'app');
-      const pagesDir = path.join(root, 'pages');
-      const removeDirIfExists = (dir: string) => {
-        if (fs.existsSync(dir)) {
-          fs.rmSync(dir, { recursive: true, force: true });
-        }
-      };
-      if (isAppRouter) {
-        removeDirIfExists(pagesDir);
-      } else {
-        removeDirIfExists(appDir);
-      }
     }
 
     if (!templateConfig?.getCreateAppScript) {
@@ -278,13 +263,6 @@ const questions: Array<Question | ListQuestion> = [
     ],
   },
   {
-    type: 'confirm',
-    name: 'isAppRouter',
-    message: 'Use App Router?',
-    default: true,
-    when: (answers) => answers.template === 'nextjs',
-  },
-  {
     type: 'list',
     name: 'language',
     message: 'JavaScript or TypeScript?',
@@ -345,7 +323,6 @@ type CreateAppScriptOptions = {
   isTypescript: boolean;
   isYarn: boolean;
   projectName: string;
-  isAppRouter?: boolean;
 };
 const templates: Record<string, TemplateOptions> = {
   vanilla: {
@@ -378,7 +355,7 @@ const templates: Record<string, TemplateOptions> = {
     dependencies: ['@line/liff'],
     devDependencies: [],
     tsDevDependencies: [],
-    getCreateAppScript: ({ isTypescript, isYarn, projectName, isAppRouter }) => {
+    getCreateAppScript: ({ isTypescript, isYarn, projectName }) => {
       const script = [];
       if (isYarn) {
         script.push('yarnpkg', 'create', 'next-app');
@@ -391,11 +368,7 @@ const templates: Record<string, TemplateOptions> = {
       } else {
         script.push('--js');
       }
-      if (isAppRouter) {
-        script.push('--app');
-      } else {
-        script.push('--pages');
-      }
+      script.push('--app');
 
       return script;
     },
