@@ -35,7 +35,7 @@ export function init(answers: Answers = {}) {
 type PackageManager = 'npm' | 'yarn'
 
 export async function createLiffApp(answers: Answers) {
-  const { projectName, template, language, liffId, useAppRouter } = answers;
+  const { projectName, template, language, liffId, isAppRouter } = answers;
   const templateConfig = templates[template] as TemplateOptions | undefined;
   if (!templateConfig) {
     throw new Error(`Invalid template name: ${template}`);
@@ -49,7 +49,7 @@ export async function createLiffApp(answers: Answers) {
   try {
     if (templateConfig?.getCreateAppScript) {
       // generate project using `create-app`
-      const script = templateConfig.getCreateAppScript({ isTypescript, isYarn, projectName, useAppRouter });
+      const script = templateConfig.getCreateAppScript({ isTypescript, isYarn, projectName, isAppRouter });
       console.log('\nGenerating liff app using `create-app`, this might take a while.\n');
       await executeCreateAppScript(script);
     } else {
@@ -75,10 +75,10 @@ export async function createLiffApp(answers: Answers) {
           fs.rmSync(dir, { recursive: true, force: true });
         }
       };
-      if (useAppRouter === false) {
-        removeDirIfExists(appDir);
-      } else {
+      if (isAppRouter) {
         removeDirIfExists(pagesDir);
+      } else {
+        removeDirIfExists(appDir);
       }
     }
 
@@ -279,7 +279,7 @@ const questions: Array<Question | ListQuestion> = [
   },
   {
     type: 'confirm',
-    name: 'useAppRouter',
+    name: 'isAppRouter',
     message: 'Use App Router?',
     default: true,
     when: (answers) => answers.template === 'nextjs',
@@ -345,7 +345,7 @@ type CreateAppScriptOptions = {
   isTypescript: boolean;
   isYarn: boolean;
   projectName: string;
-  useAppRouter?: boolean;
+  isAppRouter?: boolean;
 };
 const templates: Record<string, TemplateOptions> = {
   vanilla: {
@@ -378,7 +378,7 @@ const templates: Record<string, TemplateOptions> = {
     dependencies: ['@line/liff'],
     devDependencies: [],
     tsDevDependencies: [],
-    getCreateAppScript: ({ isTypescript, isYarn, projectName, useAppRouter }) => {
+    getCreateAppScript: ({ isTypescript, isYarn, projectName, isAppRouter }) => {
       const script = [];
       if (isYarn) {
         script.push('yarnpkg', 'create', 'next-app');
@@ -391,10 +391,10 @@ const templates: Record<string, TemplateOptions> = {
       } else {
         script.push('--js');
       }
-      if (useAppRouter === false) {
-        script.push('--pages');
-      } else {
+      if (isAppRouter) {
         script.push('--app');
+      } else {
+        script.push('--pages');
       }
 
       return script;
