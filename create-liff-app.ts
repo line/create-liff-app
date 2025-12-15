@@ -363,7 +363,12 @@ const templates: Record<string, TemplateOptions> = {
         script.push('npx', 'create-next-app', '--use-npm');
       }
       script.push(projectName);
-      if (isTypescript) script.push('--ts');
+      if (isTypescript) {
+        script.push('--ts');
+      } else {
+        script.push('--js');
+      }
+      script.push('--app');
 
       return script;
     },
