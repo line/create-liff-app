@@ -1,10 +1,12 @@
-import "../styles/globals.css";
 import type { Metadata, Viewport } from "next";
-import type { ReactNode } from "react";
+import "./globals.css";
+import { LIFFProvider } from "../providers/liff-providers";
 
 export const metadata: Metadata = {
   title: "LIFF App",
-  icons: { icon: "/favicon.ico" },
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export const viewport: Viewport = {
@@ -12,10 +14,16 @@ export const viewport: Viewport = {
   initialScale: 1.0,
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="ja">
-      <body>{children}</body>
+    <html lang="en">
+      <body>
+        <LIFFProvider>{children}</LIFFProvider>
+      </body>
     </html>
   );
 }

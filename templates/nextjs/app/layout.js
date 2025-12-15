@@ -1,8 +1,11 @@
-import "../styles/globals.css";
+import { LIFFProvider } from "../providers/liff-providers";
+import "./globals.css";
 
 export const metadata = {
   title: "LIFF App",
-  icons: { icon: "/favicon.ico" },
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export const viewport = {
@@ -12,8 +15,10 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="ja">
-      <body>{children}</body>
+    <html lang="en">
+      <body>
+        <LIFFProvider>{children}</LIFFProvider>
+      </body>
     </html>
   );
 }
