@@ -76,7 +76,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          cache: yarn
+          cache: npm
           node-version-file: .nvmrc
           registry-url: 'https://registry.npmjs.org'
       - name: Git Identity
@@ -90,16 +90,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Set PACKAGE_VERSION
         run: echo "PACKAGE_VERSION=$(cat package.json | jq -r .version)" >> $GITHUB_ENV
-      - name: Install npm 11.5.1+ for OIDC support
-        # npm 11.5.1+ is required for GitHub OIDC trusted publishing
-        # https://docs.npmjs.com/trusted-publishers
-        run: |
-          npm install -g npm@^11.5.1
-          echo "npm version: $(npm --version)"
       - name: Install dependencies
-        run: yarn install
+        run: npm ci
       - name: Run build
-        run: yarn run build
+        run: npm run build
       - name: Publish
         run: npm publish --tag latest --access public
         env:
