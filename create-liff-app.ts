@@ -329,19 +329,19 @@ const templates: Record<string, TemplateOptions> = {
     envPrefix: 'VITE_',
     dependencies: ['@line/liff'],
     devDependencies: ['vite'],
-    tsDevDependencies: ['typescript'],
+    tsDevDependencies: ['typescript@~6'],
   },
   react: {
     envPrefix: 'VITE_',
     dependencies: ['@line/liff', 'react', 'react-dom'],
     devDependencies: ['@vitejs/plugin-react', 'vite'],
-    tsDevDependencies: ['@types/react', '@types/react-dom', 'typescript'],
+    tsDevDependencies: ['@types/react', '@types/react-dom', 'typescript@~6'],
   },
   vue: {
     envPrefix: 'VITE_',
     dependencies: ['@line/liff', 'vue'],
     devDependencies: ['@vitejs/plugin-vue', 'vite'],
-    tsDevDependencies: ['typescript', 'vue-tsc'],
+    tsDevDependencies: ['typescript@~6', 'vue-tsc'],
   },
   svelte: {
     envPrefix: 'VITE_',
