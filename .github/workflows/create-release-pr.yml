@@ -35,14 +35,11 @@ jobs:
         run: |
           git config --global user.email "${GIT_AUTHOR_EMAIL}"
           git config --global user.name "${GIT_AUTHOR_NAME}"
-          yarn version --new-version "${SEMVER}" --no-git-tag-version
+          npm version "${SEMVER}" --no-git-tag-version
         env:
           SEMVER: ${{ github.event.inputs.semver }}
           GIT_AUTHOR_NAME: ${{ github.actor }}
           GIT_AUTHOR_EMAIL: ${{ github.actor }}@users.noreply.github.com
-      - name: Update yarn.lock
-        run: |
-          yarn install
       - name: Set PACKAGE_VERSION
         run: echo "PACKAGE_VERSION=$(cat package.json | jq -r .version)" >> $GITHUB_ENV
       - name: Set GitHub Release Note
