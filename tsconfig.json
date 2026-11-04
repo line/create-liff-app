@@ -9,7 +9,8 @@
     "strict": true,
     "noImplicitAny": true,
     "esModuleInterop": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "skipLibCheck": true
   },
   "exclude": ["dist", "scripts", "templates", "test/test-app"]
 }
