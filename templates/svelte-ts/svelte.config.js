@@ -1,7 +1,2 @@
-import sveltePreprocess from 'svelte-preprocess';
-
-export default {
-  // Consult https://github.com/sveltejs/svelte-preprocess
-  // for more information about preprocessors
-  preprocess: sveltePreprocess()
-};
+/** @type {import("@sveltejs/vite-plugin-svelte").SvelteConfig} */
+export default {};

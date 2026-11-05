@@ -347,7 +347,7 @@ const templates: Record<string, TemplateOptions> = {
     envPrefix: 'VITE_',
     dependencies: ['@line/liff'],
     devDependencies: ['@sveltejs/vite-plugin-svelte', 'svelte', 'vite'],
-    tsDevDependencies: ['@tsconfig/svelte', 'svelte-check', 'svelte-preprocess', 'tslib', 'typescript'],
+    tsDevDependencies: ['@tsconfig/svelte', 'svelte-check', 'tslib', 'typescript'],
   },
   nextjs: {
     envPrefix: 'NEXT_PUBLIC_',
